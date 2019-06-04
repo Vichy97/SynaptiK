@@ -1,6 +1,5 @@
 package data_processing
 
-
 sealed class DataScaler {
 
     abstract fun scale(dataset: Array<DoubleArray>): Array<DoubleArray>

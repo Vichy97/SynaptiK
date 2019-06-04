@@ -1,3 +1,5 @@
+package functions
+
 import kotlin.math.pow
 
 sealed class LossFunction {

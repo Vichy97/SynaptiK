@@ -1,10 +1,8 @@
 package neural_network
 
-import Jama.Matrix
+import org.la4j.Vector
 
 abstract class Layer(val numberOfNeurons: Int) {
 
-    var neuronVector: Matrix = Matrix(numberOfNeurons, 1)
-
-    abstract fun activate()
+    var activationVector: Vector = Vector.zero(numberOfNeurons)
 }
