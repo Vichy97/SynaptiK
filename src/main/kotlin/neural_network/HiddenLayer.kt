@@ -4,7 +4,7 @@ import functions.ActivationFunction
 import org.la4j.Matrix
 import org.la4j.Vector
 
-class HiddenLayer(
+class HiddenLayer constructor(
     numberOfNeurons: Int,
     val activationFunction: ActivationFunction
 ) : Layer(numberOfNeurons) {

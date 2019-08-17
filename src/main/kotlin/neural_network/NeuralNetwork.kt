@@ -45,6 +45,8 @@ class NeuralNetwork(private val learningRate: Double,
     }
 
     fun feedForward(inputVector: Vector, expected: Vector) {
+        println("input: " + inputVector.toCSV())
+
         inputLayer.activationVector = inputVector
         feedForward(inputLayer, layers[0])
 
@@ -52,6 +54,8 @@ class NeuralNetwork(private val learningRate: Double,
             feedForward(layers[i - 1], layers[i])
         }
         backPropagate(expected)
+
+        println("output: " + layers.last().activationVector.toCSV())
     }
 
     private fun feedForward(previousLayer: Layer, layer: HiddenLayer) {
@@ -64,36 +68,41 @@ class NeuralNetwork(private val learningRate: Double,
     }
 
     private fun backPropagate(expected: Vector) {
-        val updatedLayers = ArrayList<HiddenLayer>(layers.size)
+        val updatedLayers = mutableListOf<HiddenLayer>()
 
-        var outputBiasVector: Vector = layers.last().biasVector.copy()
-        var outputWeightMatrix: Matrix = layers.last().weightMatrix.copy()
-
-        val deltaVector = costFunction.costPrime(layers.last().activationVector, expected)
-            .hadamardProduct(getActivationPrimeVector(layers.last()))
-        outputBiasVector.add(deltaVector.multiply(learningRate))
-        val secondToLastLayer = layers[layers.lastIndex - 1]
-        for (j in 0 until outputWeightMatrix.rows()) {
-            for (k in 0 until outputWeightMatrix.columns()) {
-                outputWeightMatrix[j, k] += (secondToLastLayer.activationVector[j] + (deltaVector[j] * learningRate))
-            }
+        var deltaVector = getOutputDeltaVector(expected, layers.last())
+        for (i in layers.size - 1 downTo 0) {
+            val layer = layers[i]
+            val previousLayer = layers.getOrNull(i - 1) ?: inputLayer
+            updatedLayers.add(backPropagate(deltaVector, previousLayer, layer))
+            deltaVector = getDeltaVector(deltaVector, previousLayer, layer)
         }
-        val outputLayer = HiddenLayer(layers.last().numberOfNeurons, layers.last().activationFunction)
-        updatedLayers[layers.lastIndex] = outputLayer
 
-        for (l in layers.size - 1 downTo 0) {
-            val activationPrimeVector = getActivationPrimeVector(layers[l])
-            outputWeightMatrix = layers[l].weightMatrix.copy()
+        this.layers = updatedLayers.asReversed()
+    }
 
-            for (j in 0 until outputWeightMatrix.rows()) {
-                for (k in 0 until outputWeightMatrix.columns()) {
-                    outputWeightMatrix[j, k] += (secondToLastLayer.activationVector[j] + (deltaVector[j] * learningRate))
-                }
-            }
-            val hiddenLayer = HiddenLayer(layers[l].numberOfNeurons, layers[l].activationFunction)
-            updatedLayers[l] = hiddenLayer
-        }
-        layers = updatedLayers
+    private fun backPropagate(deltaVector: Vector, previousLayer: Layer, layer: HiddenLayer): HiddenLayer {
+        val previousActivationLayer = previousLayer.activationVector
+
+        val newBiasVector = deltaVector.copy()
+        val newWeightMatrix = deltaVector.outerProduct(previousActivationLayer)
+
+        val updatedLayer = HiddenLayer(layer.numberOfNeurons, layer.activationFunction)
+        updatedLayer.biasVector = newBiasVector
+        updatedLayer.weightMatrix = newWeightMatrix
+        updatedLayer.activationVector = layer.activationVector
+
+        return updatedLayer
+    }
+
+    private fun getOutputDeltaVector(expected: Vector, layer: HiddenLayer): Vector {
+        return costFunction.costPrime(getActivationPrimeVector(layer), expected)
+    }
+
+    private fun getDeltaVector(nextDeltaVector: Vector, previousLayer: Layer, layer: HiddenLayer): Vector {
+        lateinit var deltaVector: Vector
+
+        return deltaVector
     }
 
     private fun getActivationPrimeVector(layer: HiddenLayer): Vector {
